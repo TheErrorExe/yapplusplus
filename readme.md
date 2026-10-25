@@ -1,13 +1,21 @@
+<p align="center">
+  <img src="assets/Banner.png" alt="yapplusplusbanner" width="400" />
+</p>
 
-# Yap++
-## The cutest client modification for yappin!!
+<h1 align="center">😼 Yap++ 😼</h1>
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-![GitHub last commit](https://img.shields.io/github/last-commit/salami-reborn/yapplusplus)
-![GitHub repo size](https://img.shields.io/github/repo-size/salami-reborn/yapplusplus)
-![GitHub top language](https://img.shields.io/github/languages/top/salami-reborn/yapplusplus)
+<p align="center">
+  The cutest client modification for <a href="https://www.yapin.gg">Yappin'</a>.
+</p>
 
-[![Langandlibs](https://skillicons.dev/icons?i=ts,js,electron,windows,linux,androidstudio&perline=3)](https://skillicons.dev)
+<div align="center">
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/) ![GitHub last commit](https://img.shields.io/github/last-commit/salami-reborn/yapplusplus) ![GitHub repo size](https://img.shields.io/github/repo-size/salami-reborn/yapplusplus) ![GitHub top language](https://img.shields.io/github/languages/top/salami-reborn/yapplusplus)
+
+[![Langandlibs](https://skillicons.dev/icons?i=ts,js,electron,windows,linux,androidstudio&perline=6)](https://skillicons.dev)
+</div>
+
+<hr>
 
 Yap++ is an open-source client modification for ~~Yapper~~ Yappin'.
 
