@@ -16,14 +16,15 @@
             retryCount = 0;
             console.log("[Libyapcore] [S]");
             try {
-                const assets = {
+                const assets = { // skibidi custombadges
                     staff: await window.electronAPI.getAsset('Staffcontrib.png'),
                     helper: await window.electronAPI.getAsset('Helper.png'),
                     vim: await window.electronAPI.getAsset('Vim.png'),
                     potato: await window.electronAPI.getAsset('Cutepotato.png'),
                     whitebox: await window.electronAPI.getAsset('whiteboxbadgeidkwhy.png'),
                     sigma: await window.electronAPI.getAsset('Hefeelsverysigma.png'),
-                    chud: await window.electronAPI.getAsset('CERTIFIEDCHUD.png')
+                    chud: await window.electronAPI.getAsset('CERTIFIEDCHUD.png'),
+                    yppIcon: await window.electronAPI.getAsset('yppIcon.png')
                 };
                 await webview.executeJavaScript(`window.YapPlusAssets = ${JSON.stringify(assets)};`);
                 setTimeout(async () => {
@@ -40,12 +41,9 @@
             } catch (err) {
             }
         });
-
         webview.addEventListener('did-fail-load', (event) => {
-            console.error(`[Libyapcore] [E]> ${event.errorCode}: ${event.errorDescription}`);
             if (event.isMainFrame && retryCount < 3) {
-                retryCount++;
-                console.log(`[Libyapcore] [I]> R.C> ${retryCount}`);
+                retryCount++; // yap++ reference hehhwgweheeheheh67
                 setTimeout(() => {
                     webview.reload();
                 }, 2000);

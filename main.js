@@ -57,8 +57,9 @@ app.whenReady().then(() => {
             contextIsolation: true,
             nodeIntegration: false
         }
-    });
 
+    });
+    
     mainWindow.loadFile(path.join(__dirname, 'html', 'client.html'));
 });
 
