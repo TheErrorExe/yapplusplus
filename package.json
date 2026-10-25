@@ -1,16 +1,22 @@
 {
-  "name": "yappp_reborn",
+  "name": "yapplusplus",
+  "productName": "Yap++",
   "version": "1.0.0",
-  "description": "",
+  "description": "The cutest client modification for Yapper.",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "salami",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^45.0.0"
+    "@electron-forge/cli": "^8.0.1",
+    "@electron-forge/maker-zip": "^8.0.1",
+    "electron": "^45.0.0",
+    "electron-forge-maker-nsis": "^26.18.0"
   }
 }

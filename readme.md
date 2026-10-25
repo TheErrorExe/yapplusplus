@@ -2,14 +2,12 @@
 # Yap++
 ## The cutest client modification for yappin!!
 
-Technical info:
-
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 ![GitHub last commit](https://img.shields.io/github/last-commit/salami-reborn/yapplusplus)
 ![GitHub repo size](https://img.shields.io/github/repo-size/salami-reborn/yapplusplus)
 ![GitHub top language](https://img.shields.io/github/languages/top/salami-reborn/yapplusplus)
 
-[![Langandlibs](https://skillicons.dev/icons?i=ts,js,electron&perline=3)](https://skillicons.dev)
+[![Langandlibs](https://skillicons.dev/icons?i=ts,js,electron,windows,linux,androidstudio&perline=3)](https://skillicons.dev)
 
 Yap++ is an open-source client modification for ~~Yapper~~ Yappin'.
 
@@ -19,11 +17,8 @@ I'm also looking for ways to make a team with Antic; but antic hates me..
 
 > [!NOTE]  
 > Windows smartscreen will display: "Are you sure you want to run this app?", This is because yap++ is not signed with a 300 dollar certificate. I will plan on signing it with other certificate options to minimize this. If you are on windows 11 25H2 then you can toggle SMART-APP-CONTROL in settings to be able to run yap++ if SAC won't let you.
-## License
 
-
-
-
+## Download Yap++ in [Releases](https://github.com/salami-reborn/yapplusplus/releases)
 ## Contributing
 
 Contributions are always welcome!
