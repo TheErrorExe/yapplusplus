@@ -7,16 +7,24 @@
     </style>
 </head>
 <body>
-    <webview id="yapper-view" src="https://yapper.website"></webview>
+    <webview id="yapper-view" src="https://yapper.website" partition="persist:yapper"></webview>
     <script>
         const webview = document.getElementById('yapper-view');
+        
+        if (window.electronAPI && window.electronAPI.getPreloadPath) {
+            const path = window.electronAPI.getPreloadPath();
+            if (path) {
+                webview.setAttribute('preload', `file:///${path}`);
+            }
+        }
+
         let retryCount = 0;
 
         webview.addEventListener('did-finish-load', async () => {
             retryCount = 0;
-            console.log("[Libyapcore] [S]");
+            console.log("[Libyapcore] [I]> Yapper loaded. Fetching assets...");
             try {
-                const assets = { // skibidi custombadges
+                const assets = {
                     staff: await window.electronAPI.getAsset('Staffcontrib.png'),
                     helper: await window.electronAPI.getAsset('Helper.png'),
                     vim: await window.electronAPI.getAsset('Vim.png'),
@@ -24,7 +32,8 @@
                     whitebox: await window.electronAPI.getAsset('whiteboxbadgeidkwhy.png'),
                     sigma: await window.electronAPI.getAsset('Hefeelsverysigma.png'),
                     chud: await window.electronAPI.getAsset('CERTIFIEDCHUD.png'),
-                    yppIcon: await window.electronAPI.getAsset('yppIcon.png')
+                    yppIcon: await window.electronAPI.getAsset('yppIcon.png'),
+                    yapjsbadge: await window.electronAPI.getAsset('yapjsbadge.png')
                 };
                 await webview.executeJavaScript(`window.YapPlusAssets = ${JSON.stringify(assets)};`);
                 setTimeout(async () => {
@@ -39,11 +48,15 @@
                 }, 1500);
 
             } catch (err) {
+                console.error("[Libyapcore] [E]> Injection failed:", err);
             }
         });
+
         webview.addEventListener('did-fail-load', (event) => {
+            console.error(`[Libyapcore] [E]> ${event.errorCode}: ${event.errorDescription}`);
             if (event.isMainFrame && retryCount < 3) {
-                retryCount++; // yap++ reference hehhwgweheeheheh67
+                retryCount++;
+                console.log(`[Libyapcore] [I]> R.C> ${retryCount}`);
                 setTimeout(() => {
                     webview.reload();
                 }, 2000);

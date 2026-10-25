@@ -16,7 +16,6 @@ function getPluginCode() {
                 combinedCode += `\n// [Libyapcore] [P.L]> ${file} >.<\n`;
                 combinedCode += code + '\n';
             } catch (e) {
-                return('fuck');
             }
         }
     });
@@ -29,7 +28,7 @@ ipcMain.handle('get-plugins', () => {
 
 async function update() {
     const pluginsDir = path.join(__dirname, 'plugins');
-    const repoOwner = 'salami-reborn'; // making them variables since if i get shadowbanned again then I can change them easier
+    const repoOwner = 'salami-reborn';
     const repoName = 'yapplusplus';
     const githubApiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/plugins`;
     try {
@@ -67,6 +66,7 @@ async function update() {
         return { success: false, error: error.message };
     }
 }
+
 ipcMain.handle('update', async () => {
     return await update();
 });
@@ -87,8 +87,11 @@ ipcMain.handle('get-asset', (event, assetName) => {
         return null;
     }
 });
+
 app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
+
+    const preloadPath = path.join(__dirname, 'preload.js').replace(/\\/g, '/');
 
     const mainWindow = new BrowserWindow({
         width: 1200,
@@ -99,9 +102,9 @@ app.whenReady().then(() => {
             webviewTag: true, 
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true,
-            nodeIntegration: false
+            nodeIntegration: false,
+            additionalArguments: [`--preload-path=${preloadPath}`]
         }
-
     });
 
     mainWindow.loadFile(path.join(__dirname, 'html', 'client.html'));
