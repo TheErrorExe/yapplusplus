@@ -187,3 +187,5 @@ const imagesearch = {
         .replace(/>/g, '&gt;');
     },
 };
+
+PluginHost.register(imagesearch);

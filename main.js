@@ -27,6 +27,50 @@ ipcMain.handle('get-plugins', () => {
     return getPluginCode();
 });
 
+async function update() {
+    const pluginsDir = path.join(__dirname, 'plugins');
+    const repoOwner = 'salami-reborn'; // making them variables since if i get shadowbanned again then I can change them easier
+    const repoName = 'yapplusplus';
+    const githubApiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/plugins`;
+    try {
+        const response = await fetch(githubApiUrl, {
+            headers: { 'User-Agent': 'YapPlusPlus-App' }
+        });
+        if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+        const remoteFiles = await response.json();
+        let updatedCount = 0;
+        for (const file of remoteFiles) {
+            if (file.type === 'file' && file.name.endsWith('.js')) {
+                const localPath = path.join(pluginsDir, file.name);
+                let needsUpdate = false;
+                if (!fs.existsSync(localPath)) {
+                    needsUpdate = true;
+                } else {
+                    const localContent = fs.readFileSync(localPath, 'utf-8');
+                    const rawRes = await fetch(file.download_url);
+                    const remoteContent = await rawRes.text();
+                    if (localContent !== remoteContent) {
+                        needsUpdate = true;
+                    }
+                }
+                if (needsUpdate) {
+                    const rawRes = await fetch(file.download_url);
+                    const code = await rawRes.text();
+                    fs.writeFileSync(localPath, code, 'utf-8');
+                    updatedCount++;
+                }
+            }
+        }
+        return { success: true, count: updatedCount };
+    } catch (error) {
+        console.error('[Libyapcore] [E]> Plugin update failed:', error);
+        return { success: false, error: error.message };
+    }
+}
+ipcMain.handle('update', async () => {
+    return await update();
+});
+
 ipcMain.handle('get-asset', (event, assetName) => {
     try {
         const assetPath = path.join(__dirname, 'assets', assetName);
@@ -59,7 +103,7 @@ app.whenReady().then(() => {
         }
 
     });
-    
+
     mainWindow.loadFile(path.join(__dirname, 'html', 'client.html'));
 });
 

@@ -97,4 +97,5 @@ const filenamedisguiser = {
   },
 };
 
+window.filenamedisguiser = filenamedisguiser;
 PluginHost.register(filenamedisguiser);

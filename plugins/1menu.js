@@ -38,7 +38,6 @@
   document.head.appendChild(style);
 
   function buildpanel() {
-    // ... keep your exact buildpanel code here ...
     const p = document.createElement('div');
     p.id = panelid;
     p.innerHTML = `
@@ -95,11 +94,57 @@
   }
 
   function buildsettingspanel() {
-    // ... keep your exact buildsettingspanel code here ...
     const p = document.createElement('div');
     p.id = settingspanelid;
-    p.innerHTML = `<h1>⛩️ Plugin Settings</h1><h2>Settings for yap++ plugins</h2><hr><p></p>`;
-    
+    p.innerHTML = `
+      <h1>⛩️ Plugin Settings</h1>
+      <h2>Settings for yap++ plugins</h2>
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+        <button id="yp-update-btn" style="background: #e27ed3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s;">
+          Look for updates >,>
+        </button>
+        <span id="yp-update-status" style="font-size: 13px; color: #949ba4;"></span>
+      </div>
+      <hr><p></p>
+    `;
+
+    const updateBtn = p.querySelector('#yp-update-btn');
+    const updateStatus = p.querySelector('#yp-update-status');
+
+    updateBtn.addEventListener('click', async () => {
+      updateBtn.disabled = true;
+      updateBtn.style.background = '#4e5058';
+      updateStatus.textContent = 'Checking GitHub...';
+      updateStatus.style.color = '#e27ed3';
+
+      try {
+        const result = await window.electronAPI.update();
+
+        if (result.success) {
+          if (result.count > 0) {
+            updateStatus.textContent = `Updated ${result.count} plugin(s)! Reloading...`;
+            updateStatus.style.color = '#00ff00';
+            setTimeout(() => { window.location.reload(); }, 1500);
+          } else {
+            updateStatus.textContent = 'All plugins are already up to date!';
+            updateStatus.style.color = '#949ba4';
+            updateBtn.disabled = false;
+            updateBtn.style.background = '#e27ed3';
+          }
+        } else {
+          updateStatus.textContent = `Error: ${result.error}`;
+          updateStatus.style.color = '#ff4b4b';
+          updateBtn.disabled = false;
+          updateBtn.style.background = '#e27ed3';
+        }
+      } catch (e) {
+        updateStatus.textContent = 'IPC connection failed.';
+        updateStatus.style.color = '#ff4b4b';
+        updateBtn.disabled = false;
+        updateBtn.style.background = '#e27ed3';
+      }
+    });
+
     const aesection = document.createElement('div');
     aesection.className = 'yp-section';
     aesection.innerHTML = `
@@ -131,8 +176,8 @@
     const tagswrap = fdsection.querySelector('#ypp-fd-tags');
     const custominput = fdsection.querySelector('#ypp-fd-custom');
     const addbtn = fdsection.querySelector('#ypp-fd-add');
-    function gettypes() { return window.filenamedisguiser ? window.filenamedisguiser.getenabledtypes() : []; }
-    function savetypes(arr) { if (window.filenamedisguiser) window.filenamedisguiser.setenabledtypes(arr); }
+    function gettypes() { return window.filenamedisguiser ? window.filenamedisguiser.getEnabledTypes() : []; }
+    function savetypes(arr) { if (window.filenamedisguiser) window.filenamedisguiser.setEnabledTypes(arr); }
     function rendertags() {
       tagswrap.innerHTML = '';
       const enabled = gettypes();
@@ -183,18 +228,30 @@
     const opval = cbsection.querySelector('#ypp-bg-opacity-val');
     const cssinput = cbsection.querySelector('#ypp-bg-themecss');
     if (window.custombackground) {
-      urlinput.value = window.custombackground.geturl();
-      opinput.value = String(Math.round(window.custombackground.getopacity() * 100));
+      urlinput.value = window.custombackground.getUrl();
+      opinput.value = String(Math.round(window.custombackground.getOpacity() * 100));
       opval.textContent = opinput.value + '%';
-      cssinput.value = window.custombackground.getthemecss();
-      urlinput.addEventListener('input', () => window.custombackground.seturl(urlinput.value));
+      cssinput.value = window.custombackground.getThemeCss();
+      urlinput.addEventListener('input', () => window.custombackground.setUrl(urlinput.value));
       opinput.addEventListener('input', () => {
-        window.custombackground.setopacity(parseInt(opinput.value, 10) / 100);
+        window.custombackground.setOpacity(parseInt(opinput.value, 10) / 100);
         opval.textContent = opinput.value + '%';
       });
-      cssinput.addEventListener('input', () => window.custombackground.setthemecss(cssinput.value));
+      cssinput.addEventListener('input', () => window.custombackground.setThemeCss(cssinput.value));
     }
     return p;
+  }
+
+  function safebuild(builder, target) {
+    try {
+      target.appendChild(builder());
+    } catch (err) {
+      console.error('[Libyapcore] [E]> panel build failed', err);
+      const msg = document.createElement('div');
+      msg.style.cssText = 'padding:28px 40px;color:#ff4b4b;';
+      msg.textContent = 'This panel failed to load. Check the console for details.';
+      target.appendChild(msg);
+    }
   }
 
   let currentMode = null;
@@ -205,17 +262,15 @@
     const main = document.querySelector('.settings-main');
     if (!nav || !main) return;
 
-    // Watch for Yapper wiping the main panel
     const observer = new MutationObserver(() => {
       if (currentMode === 'settings' && !document.getElementById(settingspanelid) && main.innerHTML === '') {
-        main.appendChild(buildsettingspanel());
+        safebuild(buildsettingspanel, main);
       } else if (currentMode === 'plugins' && !document.getElementById(panelid) && main.innerHTML === '') {
-        main.appendChild(buildpanel());
+        safebuild(buildpanel, main);
       }
     });
     observer.observe(main, { childList: true });
 
-    // Regular Yap++ Button
     const btn = document.createElement('button');
     btn.id = navid;
     btn.textContent = '😼 Yap++';
@@ -225,25 +280,24 @@
       nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       main.innerHTML = '';
-      main.appendChild(buildpanel());
+      safebuild(buildpanel, main);
     });
     nav.appendChild(btn);
 
-    // Settings Button (The Fix is here)
     const settingsbtn = document.createElement('button');
     settingsbtn.id = navsettingsid;
     settingsbtn.textContent = '⛩️ Yap++ Settings';
-    
+
     settingsbtn.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); 
-      e.stopPropagation(); // Stop React router from seeing the click
+      e.preventDefault();
+      e.stopPropagation();
       currentMode = 'settings';
       nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
       settingsbtn.classList.add('active');
       main.innerHTML = '';
-      main.appendChild(buildsettingspanel());
-    }, true); 
-    
+      safebuild(buildsettingspanel, main);
+    }, true);
+
     nav.appendChild(settingsbtn);
 
     nav.addEventListener('pointerdown', (e) => {
