@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+
+
+
+
+
 function getPluginCode() {
     const pluginsDir = path.join(__dirname, 'plugins');
     let combinedCode = '';
@@ -21,10 +26,14 @@ function getPluginCode() {
     });
     return combinedCode;
 }
-
 ipcMain.handle('get-plugins', () => {
     return getPluginCode();
 });
+
+
+
+
+
 
 async function update() {
     const pluginsDir = path.join(__dirname, 'plugins');
@@ -66,11 +75,9 @@ async function update() {
         return { success: false, error: error.message };
     }
 }
-
 ipcMain.handle('update', async () => {
     return await update();
 });
-
 ipcMain.handle('get-asset', (event, assetName) => {
     try {
         const assetPath = path.join(__dirname, 'assets', assetName);
@@ -87,7 +94,6 @@ ipcMain.handle('get-asset', (event, assetName) => {
         return null;
     }
 });
-
 app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
 
@@ -109,6 +115,12 @@ app.whenReady().then(() => {
 
     mainWindow.loadFile(path.join(__dirname, 'html', 'client.html'));
 });
+
+
+
+
+
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
