@@ -1,7 +1,7 @@
 const messagelogger = {
   id: 'messagelogger',
   name: 'MessageLogger',
-  description: 'What if deleted messages became Red?',
+  description: 'what the fuck',
   
   origfetch: null,
   origaddeventlistener: null,
@@ -78,7 +78,8 @@ const messagelogger = {
     `;
     document.head.appendChild(css);
 
-    this.origfetch = window.fetch;
+    // FIX: Bind native fetch to window so 'this' doesn't break native checks
+    this.origfetch = window.fetch.bind(window);
     window.fetch = function (input, init) {
       const url = typeof input === 'string' ? input : (input?.url || '');
       const method = (init?.method) || 'GET';
@@ -97,7 +98,7 @@ const messagelogger = {
         } catch (e) {}
       }
 
-      return self.origfetch.call(this, input, init);
+      return self.origfetch(input, init);
     };
 
     this.origaddeventlistener = WebSocket.prototype.addEventListener;
