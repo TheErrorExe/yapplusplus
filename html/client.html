@@ -1,1 +1,61 @@
-<h1></h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        webview { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <webview id="yapper-view" src="https://yapper.website" partition="persist:yapper"></webview>
+    <script>
+        const webview = document.getElementById('yapper-view');    
+        if (window.electronAPI && window.electronAPI.getPreloadPath) {
+            const path = window.electronAPI.getPreloadPath();
+            if (path) {
+                const formattedPath = path.startsWith('/') ? path : '/' + path;
+                webview.setAttribute('preload', `file://${formattedPath}`);
+            }
+        }
+        let retryCount = 0;
+        webview.addEventListener('did-finish-load', async () => {
+            retryCount = 0;
+            try {
+                const assets = {
+                    staff: await window.electronAPI.getAsset('Staffcontrib.png'),
+                    helper: await window.electronAPI.getAsset('Helper.png'),
+                    vim: await window.electronAPI.getAsset('Vim.png'),
+                    potato: await window.electronAPI.getAsset('Cutepotato.png'),
+                    whitebox: await window.electronAPI.getAsset('whiteboxbadgeidkwhy.png'),
+                    sigma: await window.electronAPI.getAsset('Hefeelsverysigma.png'),
+                    chud: await window.electronAPI.getAsset('CERTIFIEDCHUD.png'),
+                    yppIcon: await window.electronAPI.getAsset('yppIcon.png'),
+                    yapjsbadge: await window.electronAPI.getAsset('yapjsbadge.png')
+                };
+                await webview.executeJavaScript(`window.YapPlusAssets = ${JSON.stringify(assets)};`);
+                
+                setTimeout(async () => {
+                    const pluginCode = await window.electronAPI.getPlugins();
+                    if (pluginCode && pluginCode.trim().length > 0) {
+                        try {
+                            await webview.executeJavaScript(pluginCode);
+                        } catch (err) {
+                        }
+                    }
+                }, 1500);
+
+            } catch (err) {
+            }
+        });
+
+        webview.addEventListener('did-fail-load', (event) => {
+            if (event.isMainFrame && retryCount < 3) {
+                retryCount++;
+                setTimeout(() => {
+                    webview.reload();
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>
