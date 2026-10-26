@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const fs = require('fs');
 const path = require('path');
-
 const hotDir = process.env.YAPPLUS_HOT_DIR;
 const appDir = process.env.YAPPLUS_APP_DIR;
+
+
+
 
 function resolve(relPath) {
     if (hotDir) {
@@ -92,43 +94,38 @@ ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
 async function update() {
     const repoOwner = 'salami-reborn';
     const repoName = 'yapplusplus';
-
-    async function fetchRecursive(path) {
-        const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`;
-        const res = await fetch(url, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
-        if (!res.ok) return [];
-        const items = await res.json();
-        let files = [];
-        
-        for (const item of items) {
-            if (item.type === 'file') {
-                if (/^(app\.js|main\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/.test(item.path)) {
-                    files.push(item);
-                }
-            } else if (item.type === 'dir') {
-                if (/^(assets|plugins|themes|html)$/.test(item.path)) {
-                    const subFiles = await fetchRecursive(item.path);
-                    files = files.concat(subFiles);
-                }
-            }
-        }
-        return files;
-    }
+    const branch = 'main';
 
     try {
-        const files = await fetchRecursive('');
+        const treeUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
+        const response = await fetch(treeUrl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
+        
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 404) {
+                throw new Error(`GitHub API returned ${response.status}. You may have hit the API rate limit (60 req/hr). Try again later.`);
+            }
+            throw new Error(`GitHub API returned ${response.status}`);
+        }
+        
+        const treeData = await response.json();
         let updatedCount = 0;
         const validPaths = new Set();
 
-        for (const file of files) {
+        const SAFE_PATHS = /^(app\.js|main\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/;
+
+        for (const file of treeData.tree || []) {
+            if (file.type !== 'blob' || !SAFE_PATHS.test(file.path)) continue;
+            
             validPaths.add(file.path);
             const localPath = path.join(hotDir, file.path);
-            const res = await fetch(file.url, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
-            if (!res.ok) continue;
-            const data = await res.json();
+            const blobUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/blobs/${file.sha}`;
+            const blobRes = await fetch(blobUrl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
+            if (!blobRes.ok) continue;
 
-            if (data.type !== 'file') continue;
-            const remoteBuffer = Buffer.from(data.content, 'base64');
+            const blobData = await blobRes.json();
+            if (blobData.encoding !== 'base64') continue;
+            const remoteBuffer = Buffer.from(blobData.content, 'base64');
+
             let needsUpdate = false;
             if (!fs.existsSync(localPath)) {
                 needsUpdate = true;
@@ -163,6 +160,7 @@ async function update() {
 
         return { success: true, count: updatedCount };
     } catch (error) {
+        console.error('[Libyapcore] [E]> Update failed:', error);
         return { success: false, error: error.message };
     }
 }
