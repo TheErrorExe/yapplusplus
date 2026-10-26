@@ -1,16 +1,12 @@
 (function () {
   if (window.__yapplusmenuinstalled) return;
   window.__yapplusmenuinstalled = true;
-
   const navid = 'yapplus-nav-button';
   const navsettingsid = 'yapplus-nav-settings-button';
   const navthemesid = 'yapplus-nav-themes-button';
   const panelid = 'yapplus-panel';
   const settingspanelid = 'yapplus-plugin-settings-panel';
   const themespanelid = 'yapplus-themes-panel';
-
-
-
 
 
 
@@ -54,18 +50,19 @@
     .yp-theme-icon { color: #949ba4; display: flex; }
     .yp-theme-icon svg { width: 20px; height: 20px; }
     .yp-theme-name { font-weight: 600; color: #fff; text-transform: capitalize; }
-    .yp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-    .yp-modal { background: #1e1f22; border: 1px solid #3f4147; border-radius: 10px; padding: 24px; width: 500px; max-width: 90vw; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
-    .yp-modal h3 { margin: 0 0 16px; color: #fff; font-size: 18px; }
-    .yp-modal textarea { width: 100%; height: 200px; background: #141519; border: 1px solid #3f4147; border-radius: 6px; color: #dbdee1; padding: 10px; font-family: monospace; font-size: 13px; resize: vertical; margin-bottom: 16px; box-sizing: border-box; outline: none; }
-    .yp-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-    .yp-btn { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
-    .yp-btn-primary { background: #e27ed3; color: #fff; }
-    .yp-btn-primary:hover { background: #d469c4; }
-    .yp-btn-secondary { background: transparent; color: #dbdee1; border: 1px solid #3f4147; }
-    .yp-btn-secondary:hover { background: #2b2d31; }
   `;
   document.head.appendChild(style);
+
+
+
+
+
+
+
+
+
+
+
 
   const SVGS = {
     plugins: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 5 3-3"/><path d="m2 22 3-3"/><path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"/><path d="M7.5 13.5 10 11"/><path d="M10.5 16.5 13 14"/><path d="m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z"/></svg>`,
@@ -74,6 +71,8 @@
     search: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>`,
     palette: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>`
   };
+
+  
 
   function buildpanel() {
     const p = document.createElement('div');
@@ -84,7 +83,6 @@
           <h1>Yap++</h1>
           <h2>The <b>Cutest</b> Client mod for yapper</h2>
         </div>
-        <button id="yp-add-custom-plugin" class="yp-btn yp-btn-primary" style="margin-top: 10px;">+ Add Custom Plugin</button>
       </div>
       <hr><p></p>
       <div class="yp-section">
@@ -133,60 +131,6 @@
     }
     render();
     window.PluginHost.onChange(render);
-    p.querySelector('#yp-add-custom-plugin').addEventListener('click', () => {
-      const overlay = document.createElement('div');
-      overlay.className = 'yp-modal-overlay';
-      overlay.innerHTML = `
-        <div class="yp-modal">
-          <h3>Add Custom Plugin</h3>
-          <input type="text" id="yp-cp-name" class="yp-input" placeholder="Plugin Name (e.g., MyCoolPlugin.js)" style="margin-bottom: 12px;">
-          <textarea id="yp-cp-code" placeholder="Paste your plugin JavaScript code here..."></textarea>
-          <div class="yp-modal-actions">
-            <button class="yp-btn yp-btn-secondary" id="yp-cp-cancel">Cancel</button>
-            <button class="yp-btn yp-btn-primary" id="yp-cp-save">Save & Reload</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      const nameInput = overlay.querySelector('#yp-cp-name');
-      const codeInput = overlay.querySelector('#yp-cp-code');
-      const cancelBtn = overlay.querySelector('#yp-cp-cancel');
-      const saveBtn = overlay.querySelector('#yp-cp-save');
-
-      cancelBtn.addEventListener('click', () => overlay.remove());
-
-      saveBtn.addEventListener('click', async () => {
-        let name = nameInput.value.trim();
-        const code = codeInput.value.trim();
-
-        if (!name) {
-          alert('Please enter a plugin name.');
-          return;
-        }
-        if (!name.endsWith('.js')) name += '.js';
-
-        saveBtn.textContent = 'Saving...';
-        saveBtn.disabled = true;
-
-        try {
-          const res = await window.electronAPI.saveCustomPlugin(name, code);
-          if (res.success) {
-            overlay.remove();
-            alert('Plugin saved; Reload.');
-            window.location.reload();
-          } else {
-            alert('hm, it failed for some reason, please post this in bug reports: ' + res.error);
-            saveBtn.textContent = 'Save & Reload';
-            saveBtn.disabled = false;
-          }
-        } catch(e) {
-          alert('hm, it failed for some reason, please post this in bug reports:  ' + e.message + ` -ipc`);
-          saveBtn.textContent = 'Save & Reload';
-          saveBtn.disabled = false;
-        }
-      });
-    });
 
     return p;
   }
@@ -212,7 +156,7 @@
     updateBtn.addEventListener('click', async () => {
       updateBtn.disabled = true;
       updateBtn.style.background = '#4e5058';
-      updateStatus.textContent = 'Checking GitHub for Core & Plugin updates...';
+      updateStatus.textContent = 'Checking for updates, hold on tight.';
       updateStatus.style.color = '#e27ed3';
 
       try {
@@ -312,18 +256,6 @@
       custominput.value = '';
       rendertags();
     });
-
-
-
-
-
-
-
-
-
-
-
-
 
     const cbsection = document.createElement('div');
     cbsection.className = 'yp-section';
