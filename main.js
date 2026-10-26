@@ -1,27 +1,10 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const fs = require('fs');
 const path = require('path');
+
 const hotDir = process.env.YAPPLUS_HOT_DIR;
 const appDir = process.env.YAPPLUS_APP_DIR;
 
-
-
-
-
-ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
-    try {
-        if (!filename.endsWith('.js')) filename += '.js';
-        const pluginsHotDir = path.join(hotDir, 'plugins');
-        if (!fs.existsSync(pluginsHotDir)) {
-            fs.mkdirSync(pluginsHotDir, { recursive: true });
-        }  
-        const filePath = path.join(pluginsHotDir, filename);
-        fs.writeFileSync(filePath, code, 'utf-8');
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: error.message };
-    }
-});
 function resolve(relPath) {
     if (hotDir) {
         const hotPath = path.join(hotDir, relPath);
@@ -55,9 +38,7 @@ function getPluginCode() {
     }
     return combinedCode;
 }
-ipcMain.handle('get-plugins', () => {
-    return getPluginCode();
-});
+
 function getThemeCode() {
     const dirs = [
         hotDir ? path.join(hotDir, 'themes') : null,
@@ -80,9 +61,8 @@ function getThemeCode() {
     return themes;
 }
 
-ipcMain.handle('get-themes', () => {
-    return getThemeCode();
-});
+ipcMain.handle('get-plugins', () => getPluginCode());
+ipcMain.handle('get-themes', () => getThemeCode());
 
 ipcMain.handle('get-asset', (event, assetName) => {
     const candidates = [
@@ -107,56 +87,66 @@ ipcMain.handle('get-asset', (event, assetName) => {
     return null;
 });
 
-async function update() { // fuckass update system dont get me wrong this shit sucks
+ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
+    try {
+        if (!filename.endsWith('.js')) filename += '.js';
+        const pluginsHotDir = path.join(hotDir, 'plugins');
+        if (!fs.existsSync(pluginsHotDir)) fs.mkdirSync(pluginsHotDir, { recursive: true });
+        fs.writeFileSync(path.join(pluginsHotDir, filename), code, 'utf-8');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+async function update() {
     const repoOwner = 'salami-reborn';
-    const repoName = 'yapplusplus'
+    const repoName = 'yapplusplus';
+    const githubApiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/master?recursive=1`;
 
     try {
-        const repoInfoRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`, {
-            headers: { 'User-Agent': 'YapPlusPlus-App' } // will it work? ts is the equivelent of calling her mommy
-        });
-        if (!repoInfoRes.ok) throw new Error(`OMFG GITHUB SHUT YOUR ASS UP.. anyway.. ${repoInfoRes.status}`);
-        
-        const repoInfo = await repoInfoRes.json();
-        const branch = repoInfo.default_branch;
-        const githubApiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
         const response = await fetch(githubApiUrl, {
             headers: { 'User-Agent': 'YapPlusPlus-App' }
         });
         if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
+        
         const treeData = await response.json();
         let updatedCount = 0;
         const validPaths = new Set();
-        const SAFE_PATHS = /^(main\.js|app\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/;
+
+        const SAFE_PATHS = /^(main\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/;
+        const TEXT_EXT = /\.(js|css|html|json|md|txt)$/i;
+
         for (const file of treeData.tree || []) {
-            if (file.type !== 'blob' || !SAFE_PATHS.test(file.path)) continue;    
+            if (file.type !== 'blob' || !SAFE_PATHS.test(file.path)) continue;
+            
             validPaths.add(file.path);
-            const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${file.path}`;
+            const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/master/${file.path}`;
             const localPath = path.join(hotDir, file.path);
+
             const rawRes = await fetch(rawUrl);
-            const remoteContent = await rawRes.text();
+            let isDifferent = false;
+            let remoteBuffer = null;
 
-
-
-
-            let needsUpdate = false;
-            if (!fs.existsSync(localPath)) {
-                needsUpdate = true;
+            if (TEXT_EXT.test(file.path)) {
+                const remoteText = await rawRes.text();
+                if (!fs.existsSync(localPath) || fs.readFileSync(localPath, 'utf-8') !== remoteText) {
+                    isDifferent = true;
+                    remoteBuffer = remoteText;
+                }
             } else {
-                const localContent = fs.readFileSync(localPath, 'utf-8');
-                if (localContent !== remoteContent) needsUpdate = true;
+                const remoteArrayBuffer = await rawRes.arrayBuffer();
+                remoteBuffer = Buffer.from(remoteArrayBuffer);
+                if (!fs.existsSync(localPath) || !fs.readFileSync(localPath).equals(remoteBuffer)) {
+                    isDifferent = true;
+                }
             }
 
-
-
-
-            if (needsUpdate) {
+            if (isDifferent) {
                 fs.mkdirSync(path.dirname(localPath), { recursive: true });
-                fs.writeFileSync(localPath, remoteContent, 'utf-8');
+                fs.writeFileSync(localPath, remoteBuffer);
                 updatedCount++;
             }
-
-            
         }
 
         function cleanDir(dir) {
@@ -176,14 +166,11 @@ async function update() { // fuckass update system dont get me wrong this shit s
 
         return { success: true, count: updatedCount };
     } catch (error) {
-        console.error('[Libyapcore] [E]> Update failed:', error);
         return { success: false, error: error.message };
     }
 }
 
-ipcMain.handle('update', async () => {
-    return await update();
-});
+ipcMain.handle('update', async () => update());
 
 ipcMain.handle('restart-app', () => {
     app.relaunch();
