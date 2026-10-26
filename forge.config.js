@@ -1,4 +1,5 @@
 const { MakerNsis } = require("electron-forge-maker-nsis");
+const { MakerAppImage } = require("electron-forge-maker-appimage");
 
 // let me fucking rant about squirell for a fucking second
 // i wanted to release this fucking abomination 
@@ -27,6 +28,14 @@ module.exports = {
       createDesktopShortcut: true,
       createStartMenuShortcut: true,
       shortcutName: "Yap++"
+    }),
+    new MakerAppImage({ // fuck, i'll have to git clone it to wsl to build it as appimage ggs
+      options: {
+        categories: ["Utility"],        
+        icon: "./assets/icon.png",      
+        productName: "Yap++",           
+        genericName: "Yapper client",  
+    }
     })
   ]
 };

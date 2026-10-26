@@ -17,6 +17,7 @@
     "@electron-forge/cli": "^8.0.1",
     "@electron-forge/maker-zip": "^8.0.1",
     "electron": "^45.0.0",
+    "electron-forge-maker-appimage": "^26.18.0",
     "electron-forge-maker-nsis": "^26.18.0"
   }
 }
