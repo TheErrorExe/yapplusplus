@@ -1,7 +1,7 @@
 const messagelogger = {
   id: 'messagelogger',
   name: 'MessageLogger',
-  description: 'what if deleted messages became Red?',
+  description: 'What if deleted messages became Red?',
   
   origfetch: null,
   origaddeventlistener: null,
@@ -56,6 +56,7 @@ const messagelogger = {
   },
 
   start() {
+    const self = this;
     this.loadsettings();
     this.applystyleclass();
 
@@ -78,68 +79,69 @@ const messagelogger = {
     document.head.appendChild(css);
 
     this.origfetch = window.fetch;
-    window.fetch = (input, init) => {
+    window.fetch = function (input, init) {
       const url = typeof input === 'string' ? input : (input?.url || '');
       const method = (init?.method) || 'GET';
       const ismessages = url.includes('/rest/v1/messages');
 
       if (ismessages && method === 'DELETE') {
         const m = url.match(/id=eq\.([0-9a-f-]+)/i);
-        if (m) this.handledelete(m[1]);
+        if (m) self.handledelete(m[1]);
       }
 
       if (ismessages && method === 'PATCH' && init?.body) {
         const m = url.match(/id=eq\.([0-9a-f-]+)/i);
         try {
           const body = JSON.parse(init.body);
-          if (m && body.content) this.handleedit(m[1], body.content);
+          if (m && body.content) self.handleedit(m[1], body.content);
         } catch (e) {}
       }
 
-      return this.origfetch.call(this, input, init);
+      return self.origfetch.call(this, input, init);
     };
 
     this.origaddeventlistener = WebSocket.prototype.addEventListener;
-    WebSocket.prototype.addEventListener = (type, listener, options) => {
-      if (type !== 'message') return this.origaddeventlistener.call(WebSocket.prototype, type, listener, options);
+    WebSocket.prototype.addEventListener = function (type, listener, options) {
+      if (type !== 'message') return self.origaddeventlistener.call(this, type, listener, options);
       
-      const wrapped = (ev) => {
+      const wrapped = function (ev) {
         try {
           const frame = JSON.parse(ev.data);
           const data = frame?.payload?.data;
           if (data?.table === 'messages') {
             const t = data.type || frame.event;
-            if (t === 'UPDATE' && this.settings.logedits) {
-              this.handleedit(data.record.id, data.record.content);
+            if (t === 'UPDATE' && self.settings.logedits) {
+              self.handleedit(data.record.id, data.record.content);
             } else if (t === 'DELETE') {
               const old = data.old_record || data.old;
-              if (old?.id) this.handledelete(old.id);
+              if (old?.id) self.handledelete(old.id);
             }
           }
         } catch (e) {}
-        return listener.call(WebSocket.prototype, ev);
+        return listener.call(this, ev);
       };
       
-      return this.origaddeventlistener.call(WebSocket.prototype, type, wrapped, options);
+      return self.origaddeventlistener.call(this, type, wrapped, options);
     };
 
     window.addEventListener('yapper:message-removed', (ev) => {
       const id = ev?.detail;
-      const msg = this.removedcandidates.get(id);
-      this.removedcandidates.delete(id);
+      const msg = self.removedcandidates.get(id);
+      self.removedcandidates.delete(id);
       
-      if (!msg || !this.settings.logdeletes || this.isignored(msg)) return;
+      if (!msg || !self.settings.logdeletes || self.isignored(msg)) return;
       
       const ghost = { ...msg, deleted: true, deletedat: new Date().toISOString() };
       delete ghost.pending;
       delete ghost.failed;
       
-      this.ghosts.set(id, ghost);
-      queueMicrotask(() => this.paint());
+      self.ghosts.set(id, ghost);
+      queueMicrotask(() => self.paint());
     });
 
-    this.paintinterval = setInterval(() => this.paint(), 1000);
+    this.paintinterval = setInterval(() => self.paint(), 1000);
     this.paint();
+    console.log('[MessageLogger] armed');
   },
 
   handledelete(id) {
