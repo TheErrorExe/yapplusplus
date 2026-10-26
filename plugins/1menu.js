@@ -86,7 +86,6 @@
         </div>
         <button id="yp-add-custom-plugin" class="yp-btn yp-btn-primary" style="margin-top: 10px;">+ Add Custom Plugin</button>
       </div>
-      <p style="color: pink;">Tester build</p>
       <hr><p></p>
       <div class="yp-section">
         <h3>Plugins</h3>
