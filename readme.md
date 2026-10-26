@@ -8,18 +8,14 @@
   The cutest client modification for <a href="https://www.yapin.gg">Yappin'</a>.
 </p>
 <div align="center">
-  
-
-> [!WARNING]  
-> Yap++ is **NOT** affiliated with Yappin/Yapper. Yap++ is a community-made client-side modification for the Yappin app.
-
-</div>
-<div align="center">
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/) ![GitHub last commit](https://img.shields.io/github/last-commit/salami-reborn/yapplusplus) ![GitHub repo size](https://img.shields.io/github/repo-size/salami-reborn/yapplusplus) ![GitHub top language](https://img.shields.io/github/languages/top/salami-reborn/yapplusplus)
 
 [![Langandlibs](https://skillicons.dev/icons?i=ts,js,electron,windows,linux,androidstudio&perline=6)](https://skillicons.dev)
 </div>
+
+> [!WARNING]  
+> Yap++ is **NOT** affiliated with Yappin/Yapper. Yap++ is a community-made client-side modification for the Yappin app.
 
 <hr>
 
