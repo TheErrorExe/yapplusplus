@@ -11,7 +11,7 @@
   
 
 > [!WARNING]  
-> Yap++ is __NOT__ affiliated with Yappin/Yapper. Yap++ is a community made clientside modification for the yappin app. 
+> Yap++ is **NOT** affiliated with Yappin/Yapper. Yap++ is a community-made client-side modification for the Yappin app.
 
 </div>
 <div align="center">
