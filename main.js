@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const hotDir = process.env.YAPPLUS_HOT_DIR;
@@ -14,6 +14,9 @@ function resolve(relPath) {
     }
     return path.join(appDir, relPath);
 }
+
+
+
 
 function getPluginCode() {
     const dirs = [
@@ -85,6 +88,15 @@ ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
         const pluginsHotDir = path.join(hotDir, 'plugins');
         if (!fs.existsSync(pluginsHotDir)) fs.mkdirSync(pluginsHotDir, { recursive: true });
         fs.writeFileSync(path.join(pluginsHotDir, filename), code, 'utf-8');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('open-external', async (event, url) => {
+    try {
+        await shell.openExternal(url);
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
@@ -191,8 +203,45 @@ app.whenReady().then(() => {
         }
     });
 
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.includes('yapper.website') || url.includes('yapin.gg')) {
+            return { action: 'allow' };
+        }
+        shell.openExternal(url);
+        return { action: 'deny' };
+    });
+
+    mainWindow.webContents.on('did-attach-webview', (event, wc) => {
+        wc.executeJavaScript(`
+            document.addEventListener('click', (e) => {
+                const a = e.target.closest ? e.target.closest('a') : null;
+                if (!a) return;
+                const href = a.getAttribute('href');
+                if (!href) return;
+                
+                if (href.startsWith('#') || href.startsWith('javascript:')) return;
+                if (href.includes('yapper.website') || href.includes('yapin.gg')) return;
+
+                if (href.startsWith('http://') || href.startsWith('https://')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.electronAPI.openExternal(href);
+                }
+            }, true);
+        `);
+
+        wc.on('will-navigate', (event, url) => {
+            if (!url.includes('yapper.website') && !url.includes('yapin.gg')) {
+                event.preventDefault();
+                shell.openExternal(url);
+            }
+        });
+    });
+
     mainWindow.loadFile(clientPath);
 });
+
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

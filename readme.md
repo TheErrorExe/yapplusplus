@@ -48,4 +48,8 @@ If you want to contribute but first test out your plugin, Then you have to self-
   npm install
   npm start
 ```
+
+Common bugs & how to fix:
+* Can't get other files like my customplugin because I updated:
+ * `npm run clean` (make sure yap++ is closed or it wont run)
     

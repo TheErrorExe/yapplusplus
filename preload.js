@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPreloadPath: () => preloadPath,
     restartApp: () => ipcRenderer.invoke('restart-app'),
     getThemes: () => ipcRenderer.invoke('get-themes'),
-    saveCustomPlugin: (filename, code) => ipcRenderer.invoke('save-custom-plugin', filename, code)
+    saveCustomPlugin: (filename, code) => ipcRenderer.invoke('save-custom-plugin', filename, code),
+    openExternal: (url) => ipcRenderer.invoke('open-external', url)
 });
