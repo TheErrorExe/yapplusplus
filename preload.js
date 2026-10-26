@@ -7,5 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPlugins: () => ipcRenderer.invoke('get-plugins'),
     getAsset: (assetName) => ipcRenderer.invoke('get-asset', assetName),
     update: () => ipcRenderer.invoke('update'),
-    getPreloadPath: () => preloadPath
+    getPreloadPath: () => preloadPath,
+    restartApp: () => ipcRenderer.invoke('restart-app'),
+    getThemes: () => ipcRenderer.invoke('get-themes'),
+    saveCustomPlugin: (filename, code) => ipcRenderer.invoke('save-custom-plugin', filename, code)
 });

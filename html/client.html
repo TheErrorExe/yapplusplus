@@ -9,17 +9,15 @@
 <body>
     <webview id="yapper-view" src="https://yapper.website" partition="persist:yapper"></webview>
     <script>
-        const webview = document.getElementById('yapper-view');
-        
+        const webview = document.getElementById('yapper-view');    
         if (window.electronAPI && window.electronAPI.getPreloadPath) {
             const path = window.electronAPI.getPreloadPath();
             if (path) {
-                webview.setAttribute('preload', `file:///${path}`);
+                const formattedPath = path.startsWith('/') ? path : '/' + path;
+                webview.setAttribute('preload', `file://${formattedPath}`);
             }
         }
-
         let retryCount = 0;
-
         webview.addEventListener('did-finish-load', async () => {
             retryCount = 0;
             console.log("[Libyapcore] [I]> Yapper loaded. Fetching assets...");
@@ -36,6 +34,7 @@
                     yapjsbadge: await window.electronAPI.getAsset('yapjsbadge.png')
                 };
                 await webview.executeJavaScript(`window.YapPlusAssets = ${JSON.stringify(assets)};`);
+                
                 setTimeout(async () => {
                     const pluginCode = await window.electronAPI.getPlugins();
                     if (pluginCode && pluginCode.trim().length > 0) {

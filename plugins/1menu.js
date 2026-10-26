@@ -4,21 +4,33 @@
 
   const navid = 'yapplus-nav-button';
   const navsettingsid = 'yapplus-nav-settings-button';
+  const navthemesid = 'yapplus-nav-themes-button';
   const panelid = 'yapplus-panel';
   const settingspanelid = 'yapplus-plugin-settings-panel';
-  const style = document.createElement('style');
+  const themespanelid = 'yapplus-themes-panel';
 
+
+
+
+
+
+
+
+
+
+
+
+
+  const style = document.createElement('style');
   style.textContent = `
-    #${navid}, #${navsettingsid} { color: #e27ed3; }
-    #${panelid}, #${settingspanelid} { padding: 28px 40px; color: #dbdee1; line-height: 1.5; }
-    #${panelid} h2, #${settingspanelid} h2 { margin: 0 0 18px; font-size: 20px; color: #fff; }
-    #${panelid} a, #${settingspanelid} a { color: #e27ed3; text-decoration: none; }
-    #${panelid} a:hover, #${settingspanelid} a:hover { text-decoration: underline; }
-    #${panelid} .yp-section, #${settingspanelid} .yp-section { margin-bottom: 24px; }
-    #${panelid} .yp-section h3, #${settingspanelid} .yp-section h3 {
-      font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
-      color: #b5bac1; margin: 0 0 10px;
-    }
+    #${navid}, #${navsettingsid}, #${navthemesid} { display: flex; align-items: center; gap: 8px; color: #e27ed3; }
+    #${navid} svg, #${navsettingsid} svg, #${navthemesid} svg { width: 18px; height: 18px; }
+    #${panelid}, #${settingspanelid}, #${themespanelid} { padding: 28px 40px; color: #dbdee1; line-height: 1.5; }
+    #${panelid} h2, #${settingspanelid} h2, #${themespanelid} h2 { margin: 0 0 18px; font-size: 20px; color: #fff; }
+    #${panelid} a, #${settingspanelid} a, #${themespanelid} a { color: #e27ed3; text-decoration: none; }
+    #${panelid} a:hover, #${settingspanelid} a:hover, #${themespanelid} a:hover { text-decoration: underline; }
+    .yp-section { margin-bottom: 24px; }
+    .yp-section h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #b5bac1; margin: 0 0 10px; }
     .yp-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
     .yp-switch input { opacity: 0; width: 0; height: 0; }
     .yp-slider { position: absolute; inset: 0; background: #4e5058; border-radius: 22px; transition: background .15s; cursor: pointer; }
@@ -34,15 +46,46 @@
     .yp-type-tag button { background: none; border: none; color: #949ba4; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; display: flex; align-items: center; }
     .yp-type-tag button:hover { color: #ff4b4b; }
     .yp-tags-wrap { display: flex; flex-wrap: wrap; margin-bottom: 8px; min-height: 32px; }
+    .yp-search-wrap { position: relative; margin-bottom: 20px; }
+    .yp-search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: #949ba4; }
+    .yp-search-wrap input { padding-left: 36px; }
+    .yp-theme-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #2b2d31; }
+    .yp-theme-info { display: flex; align-items: center; gap: 12px; }
+    .yp-theme-icon { color: #949ba4; display: flex; }
+    .yp-theme-icon svg { width: 20px; height: 20px; }
+    .yp-theme-name { font-weight: 600; color: #fff; text-transform: capitalize; }
+    .yp-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+    .yp-modal { background: #1e1f22; border: 1px solid #3f4147; border-radius: 10px; padding: 24px; width: 500px; max-width: 90vw; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+    .yp-modal h3 { margin: 0 0 16px; color: #fff; font-size: 18px; }
+    .yp-modal textarea { width: 100%; height: 200px; background: #141519; border: 1px solid #3f4147; border-radius: 6px; color: #dbdee1; padding: 10px; font-family: monospace; font-size: 13px; resize: vertical; margin-bottom: 16px; box-sizing: border-box; outline: none; }
+    .yp-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .yp-btn { padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+    .yp-btn-primary { background: #e27ed3; color: #fff; }
+    .yp-btn-primary:hover { background: #d469c4; }
+    .yp-btn-secondary { background: transparent; color: #dbdee1; border: 1px solid #3f4147; }
+    .yp-btn-secondary:hover { background: #2b2d31; }
   `;
   document.head.appendChild(style);
+
+  const SVGS = {
+    plugins: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 5 3-3"/><path d="m2 22 3-3"/><path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"/><path d="M7.5 13.5 10 11"/><path d="M10.5 16.5 13 14"/><path d="m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z"/></svg>`,
+    settings: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>`,
+    theme: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 10 3 3"/><path d="M6.5 21A3.5 3.5 0 1 0 3 17.5a2.62 2.62 0 0 1-.708 1.792A1 1 0 0 0 3 21z"/><path d="M9.969 17.031 21.378 5.624a1 1 0 0 0-3.002-3.002L6.967 14.031"/></svg>`,
+    search: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>`,
+    palette: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>`
+  };
 
   function buildpanel() {
     const p = document.createElement('div');
     p.id = panelid;
     p.innerHTML = `
-      <h1>😼 Yap++ </h1>
-      <h2>The <b>Cutest</b> Client mod for yapper</h2>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h1>Yap++</h1>
+          <h2>The <b>Cutest</b> Client mod for yapper</h2>
+        </div>
+        <button id="yp-add-custom-plugin" class="yp-btn yp-btn-primary" style="margin-top: 10px;">+ Add Custom Plugin</button>
+      </div>
       <p style="color: pink;">Tester build</p>
       <hr><p></p>
       <div class="yp-section">
@@ -52,12 +95,12 @@
       <hr>
       <div class="yp-section">
         <h3>About</h3>
-        <p>Thank you for using Yap++ 😼</p>
+        <p>Thank you for using Yap++</p>
         <p>Yapper: <b>salami</b></p>
         <p>YouTube: <a href="https://www.youtube.com/@sedesuu" target="_blank">@sedesuu</a></p>
         <p>Discord: <a href="https://discord.com/users/1384802116106719384" target="_blank">.salamidev</a></p>
         <p>Thank you to our biggest helper and Co-Owner too;</p>
-        <p>I'm ofcourse talking about the goat @Lemon 🥹</p>
+        <p>I'm ofcourse talking about the goat @Lemon</p>
         <hr><p></p>
         <div class="yp-section">
           <h3>Ethics</h3>
@@ -65,6 +108,7 @@
         </div>
       </div>
     `;
+
     const list = p.querySelector('#yapplus-plugin-list');
     function render() {
       list.innerHTML = '';
@@ -90,6 +134,61 @@
     }
     render();
     window.PluginHost.onChange(render);
+    p.querySelector('#yp-add-custom-plugin').addEventListener('click', () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'yp-modal-overlay';
+      overlay.innerHTML = `
+        <div class="yp-modal">
+          <h3>Add Custom Plugin</h3>
+          <input type="text" id="yp-cp-name" class="yp-input" placeholder="Plugin Name (e.g., MyCoolPlugin.js)" style="margin-bottom: 12px;">
+          <textarea id="yp-cp-code" placeholder="Paste your plugin JavaScript code here..."></textarea>
+          <div class="yp-modal-actions">
+            <button class="yp-btn yp-btn-secondary" id="yp-cp-cancel">Cancel</button>
+            <button class="yp-btn yp-btn-primary" id="yp-cp-save">Save & Reload</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const nameInput = overlay.querySelector('#yp-cp-name');
+      const codeInput = overlay.querySelector('#yp-cp-code');
+      const cancelBtn = overlay.querySelector('#yp-cp-cancel');
+      const saveBtn = overlay.querySelector('#yp-cp-save');
+
+      cancelBtn.addEventListener('click', () => overlay.remove());
+
+      saveBtn.addEventListener('click', async () => {
+        let name = nameInput.value.trim();
+        const code = codeInput.value.trim();
+
+        if (!name) {
+          alert('Please enter a plugin name.');
+          return;
+        }
+        if (!name.endsWith('.js')) name += '.js';
+
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+
+        try {
+          const res = await window.electronAPI.saveCustomPlugin(name, code);
+          if (res.success) {
+            overlay.remove();
+            alert('Plugin saved; Reload.');
+            window.location.reload();
+          } else {
+            alert('hm, it failed for some reason, please post this in bug reports: ' + res.error);
+            saveBtn.textContent = 'Save & Reload';
+            saveBtn.disabled = false;
+          }
+        } catch(e) {
+          alert('hm, it failed for some reason, please post this in bug reports:  ' + e.message + ` -ipc`);
+          saveBtn.textContent = 'Save & Reload';
+          saveBtn.disabled = false;
+        }
+      });
+    });
+
     return p;
   }
 
@@ -97,7 +196,7 @@
     const p = document.createElement('div');
     p.id = settingspanelid;
     p.innerHTML = `
-      <h1>⛩️ Plugin Settings</h1>
+      <h1>Plugin Settings</h1>
       <h2>Settings for yap++ plugins</h2>
       <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
         <button id="yp-update-btn" style="background: #e27ed3; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; transition: background 0.2s;">
@@ -114,7 +213,7 @@
     updateBtn.addEventListener('click', async () => {
       updateBtn.disabled = true;
       updateBtn.style.background = '#4e5058';
-      updateStatus.textContent = 'Checking GitHub...';
+      updateStatus.textContent = 'Checking GitHub for Core & Plugin updates...';
       updateStatus.style.color = '#e27ed3';
 
       try {
@@ -122,11 +221,18 @@
 
         if (result.success) {
           if (result.count > 0) {
-            updateStatus.textContent = `Updated ${result.count} plugin(s)! Reloading...`;
+            updateStatus.textContent = `Updated ${result.count} file(s)! You MUST restart the app to apply changes.`;
             updateStatus.style.color = '#00ff00';
-            setTimeout(() => { window.location.reload(); }, 1500);
+            
+            updateBtn.textContent = "Restart App";
+            updateBtn.style.background = '#ff4b4b';
+            updateBtn.disabled = false;
+            
+            updateBtn.onclick = () => { 
+                window.electronAPI.restartApp(); 
+            };
           } else {
-            updateStatus.textContent = 'All plugins are already up to date!';
+            updateStatus.textContent = 'Everything is already up to date!';
             updateStatus.style.color = '#949ba4';
             updateBtn.disabled = false;
             updateBtn.style.background = '#e27ed3';
@@ -208,6 +314,18 @@
       rendertags();
     });
 
+
+
+
+
+
+
+
+
+
+
+
+
     const cbsection = document.createElement('div');
     cbsection.className = 'yp-section';
     cbsection.innerHTML = `
@@ -242,11 +360,128 @@
     return p;
   }
 
+  function buildthemespanel() {
+    const p = document.createElement('div');
+    p.id = themespanelid;
+    p.innerHTML = `
+      <h1>Themes</h1>
+      <h2>Customize your Yapper experience</h2>
+      <hr><p></p>
+      <div class="yp-search-wrap">
+        ${SVGS.search}
+        <input type="text" id="yp-theme-search" class="yp-input" placeholder="Search themes...">
+      </div>
+      <div id="yp-theme-list" class="yp-section"></div>
+    `;
+
+    const searchInput = p.querySelector('#yp-theme-search');
+    const listContainer = p.querySelector('#yp-theme-list');
+
+    let themeStyleEl = document.getElementById('yapplus-active-theme');
+    if (!themeStyleEl) {
+      themeStyleEl = document.createElement('style');
+      themeStyleEl.id = 'yapplus-active-theme';
+      document.head.appendChild(themeStyleEl);
+    }
+
+    let availableThemes = {};
+    
+    async function loadThemes() {
+      try {
+        if (window.electronAPI && window.electronAPI.getThemes) {
+          availableThemes = await window.electronAPI.getThemes();
+        } else {
+          availableThemes = { "placeholder.css": "/* Example CSS */" };
+        }
+      } catch(e) {}
+      renderThemes();
+    }
+
+    function renderThemes(filter = '') {
+      listContainer.innerHTML = '';
+      const activeTheme = localStorage.getItem('yapplus.activeTheme') || '';
+      const lowerFilter = filter.toLowerCase();
+      
+      let hasThemes = false;
+      Object.keys(availableThemes).sort().forEach(filename => {
+        if (!filename.endsWith('.css')) return;
+        const name = filename.replace('.css', '');
+        
+        if (lowerFilter && !name.toLowerCase().includes(lowerFilter)) return;
+        hasThemes = true;
+
+        const isActive = activeTheme === filename;
+        
+        const row = document.createElement('div');
+        row.className = 'yp-theme-row';
+        
+        const info = document.createElement('div');
+        info.className = 'yp-theme-info';
+        info.innerHTML = `
+          <div class="yp-theme-icon">${SVGS.palette}</div>
+          <div class="yp-theme-name">${name}</div>
+        `;
+        
+        const label = document.createElement('label');
+        label.className = 'yp-switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = isActive;
+        
+        const slider = document.createElement('span');
+        slider.className = 'yp-slider';
+        
+        input.addEventListener('change', () => {
+          if (input.checked) {
+            listContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+              if (cb !== input) cb.checked = false;
+            });
+            applyTheme(filename);
+          } else {
+            applyTheme(null);
+          }
+        });
+        
+        label.appendChild(input);
+        label.appendChild(slider);
+        row.appendChild(info);
+        row.appendChild(label);
+        listContainer.appendChild(row);
+      });
+
+      if (!hasThemes) {
+        listContainer.innerHTML = '<div style="color:#949ba4; font-size:13px; text-align:center; padding:20px;">No themes found.</div>';
+      }
+    }
+
+    function applyTheme(filename) {
+      if (!filename) {
+        localStorage.removeItem('yapplus.activeTheme');
+        themeStyleEl.textContent = '';
+        renderThemes(searchInput.value);
+        return;
+      }
+      
+      localStorage.setItem('yapplus.activeTheme', filename);
+      themeStyleEl.textContent = availableThemes[filename] || '';
+      renderThemes(searchInput.value);
+    }
+
+    const saved = localStorage.getItem('yapplus.activeTheme');
+    if (saved && availableThemes[saved]) {
+      themeStyleEl.textContent = availableThemes[saved];
+    }
+
+    searchInput.addEventListener('input', (e) => renderThemes(e.target.value));
+    loadThemes();
+
+    return p;
+  }
+
   function safebuild(builder, target) {
     try {
       target.appendChild(builder());
     } catch (err) {
-      console.error('[Libyapcore] [E]> panel build failed', err);
       const msg = document.createElement('div');
       msg.style.cssText = 'padding:28px 40px;color:#ff4b4b;';
       msg.textContent = 'This panel failed to load. Check the console for details.';
@@ -267,13 +502,15 @@
         safebuild(buildsettingspanel, main);
       } else if (currentMode === 'plugins' && !document.getElementById(panelid) && main.innerHTML === '') {
         safebuild(buildpanel, main);
+      } else if (currentMode === 'themes' && !document.getElementById(themespanelid) && main.innerHTML === '') {
+        safebuild(buildthemespanel, main);
       }
     });
     observer.observe(main, { childList: true });
 
     const btn = document.createElement('button');
     btn.id = navid;
-    btn.textContent = '😼 Yap++';
+    btn.innerHTML = `${SVGS.plugins} <span>Yap++ Plugins</span>`;
     btn.addEventListener('click', (e) => {
       e.preventDefault(); e.stopPropagation();
       currentMode = 'plugins';
@@ -284,10 +521,22 @@
     });
     nav.appendChild(btn);
 
+    const themesbtn = document.createElement('button');
+    themesbtn.id = navthemesid;
+    themesbtn.innerHTML = `${SVGS.theme} <span>Themes</span>`;
+    themesbtn.addEventListener('click', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      currentMode = 'themes';
+      nav.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      themesbtn.classList.add('active');
+      main.innerHTML = '';
+      safebuild(buildthemespanel, main);
+    });
+    nav.appendChild(themesbtn);
+
     const settingsbtn = document.createElement('button');
     settingsbtn.id = navsettingsid;
-    settingsbtn.textContent = '⛩️ Yap++ Settings';
-
+    settingsbtn.innerHTML = `${SVGS.settings} <span>Yap++ Settings</span>`;
     settingsbtn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -297,16 +546,14 @@
       main.innerHTML = '';
       safebuild(buildsettingspanel, main);
     }, true);
-
     nav.appendChild(settingsbtn);
 
     nav.addEventListener('pointerdown', (e) => {
-      if (e.target !== btn && e.target !== settingsbtn && !btn.contains(e.target) && !settingsbtn.contains(e.target)) {
+      if (e.target !== btn && e.target !== settingsbtn && e.target !== themesbtn &&
+          !btn.contains(e.target) && !settingsbtn.contains(e.target) && !themesbtn.contains(e.target)) {
         currentMode = null;
       }
     });
-
-    console.log('[Libyapcore] [I]> 😼 Yap++ is HEREEEE BABEYYYY');
   }
 
   new MutationObserver(inject).observe(document.body, { childList: true, subtree: true });

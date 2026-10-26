@@ -3,7 +3,7 @@
   "productName": "Yap++",
   "version": "1.0.0",
   "description": "The cutest client modification for Yapper.",
-  "main": "main.js",
+  "main": "app.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
