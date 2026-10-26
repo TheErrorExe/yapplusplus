@@ -1,8 +1,12 @@
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, shell, desktopCapturer, session } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const hotDir = process.env.YAPPLUS_HOT_DIR;
 const appDir = process.env.YAPPLUS_APP_DIR;
+
+
+
+
 
 
 
@@ -40,6 +44,8 @@ function getPluginCode() {
     return combinedCode;
 }
 
+
+
 function getThemeCode() {
     const dirs = [
         hotDir ? path.join(hotDir, 'themes') : null,
@@ -59,8 +65,10 @@ function getThemeCode() {
 
 ipcMain.handle('get-plugins', () => getPluginCode());
 ipcMain.handle('get-themes', () => getThemeCode());
-
 ipcMain.handle('get-asset', (event, assetName) => {
+
+
+
     const candidates = [
         hotDir ? path.join(hotDir, 'assets', assetName) : null,
         path.join(appDir, 'assets', assetName)
@@ -80,6 +88,8 @@ ipcMain.handle('get-asset', (event, assetName) => {
         }
     }
     return null;
+
+
 });
 
 ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
@@ -186,6 +196,74 @@ ipcMain.handle('restart-app', () => {
 
 app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
+    
+    session.defaultSession.setDisplayMediaRequestHandler(async (request, callback) => {
+        try {
+            const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 320, height: 180 } });
+            
+            const pickerWindow = new BrowserWindow({
+                width: 800,
+                height: 600,
+                title: 'Select Screen to Share',
+                autoHideMenuBar: true,
+                alwaysOnTop: true,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false
+                }
+            });
+
+            let sourcesData = sources.map(s => ({
+                id: s.id,
+                name: s.name,
+                thumbnail: s.thumbnail.toDataURL()
+            }));
+
+            const html = `
+                <html>
+                <body style="background: #1e1f22; color: #dbdee1; font-family: sans-serif; padding: 20px;">
+                    <h2 style="margin-top: 0;">Select a screen or window to share</h2>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+                        ${sourcesData.map((s, i) => `
+                            <div onclick="pick(${i})" style="cursor: pointer; text-align: center; width: 220px; padding: 10px; border-radius: 8px; background: #2b2d31;">
+                                <img src="${s.thumbnail}" style="width: 100%; border-radius: 4px; border: 1px solid #111;" />
+                                <div style="margin-top: 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <script>
+                        const { ipcRenderer } = require('electron');
+                        window.pick = (i) => {
+                            ipcRenderer.send('picked-screen', ${JSON.stringify(sourcesData)}[i]);
+                        };
+                    </script>
+                </body>
+                </html>
+            `;
+            pickerWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+            ipcMain.once('picked-screen', (event, picked) => {
+                pickerWindow.close();
+                if (!picked) {
+                    callback({});
+                    return;
+                }
+                
+                const streams = { video: picked };
+                if (request.audioRequested && process.platform === 'win32') {
+                    streams.audio = 'loopback';
+                }
+                callback(streams);
+            });
+        
+            pickerWindow.on('closed', () => {
+                callback({});
+            });
+
+        } catch (err) {
+            console.error('Screen picker failed:', err);
+            callback({});
+        }
+    });
     const preloadPath = resolve('preload.js').replace(/\\/g, '/');
     const clientPath = resolve('html/client.html');
 
@@ -240,9 +318,6 @@ app.whenReady().then(() => {
 
     mainWindow.loadFile(clientPath);
 });
-
-
-
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
