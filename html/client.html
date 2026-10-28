@@ -7,19 +7,19 @@
     </style>
 </head>
 <body>
-    <webview id="yapper-view" src="https://yapper.website" partition="persist:yapper"></webview>
+    <webview id="yapper-view" src="https://yapper.website" partition="persist:yapper" allowpopups></webview>
     <script>
-        const webview = document.getElementById('yapper-view');    
+        const webview = document.getElementById('yapper-view');
         if (window.electronAPI && window.electronAPI.getPreloadPath) {
             const path = window.electronAPI.getPreloadPath();
             if (path) {
-                const formattedPath = path.startsWith('/') ? path : '/' + path;
-                webview.setAttribute('preload', `file://${formattedPath}`);
+                const formattedpath = path.startsWith('/') ? path : '/' + path;
+                webview.setAttribute('preload', `file://${formattedpath}`);
             }
         }
-        let retryCount = 0;
+        let retrycount = 0;
         webview.addEventListener('did-finish-load', async () => {
-            retryCount = 0;
+            retrycount = 0;
             try {
                 const assets = {
                     staff: await window.electronAPI.getAsset('Staffcontrib.png'),
@@ -33,12 +33,11 @@
                     yapjsbadge: await window.electronAPI.getAsset('yapjsbadge.png')
                 };
                 await webview.executeJavaScript(`window.YapPlusAssets = ${JSON.stringify(assets)};`);
-                
                 setTimeout(async () => {
-                    const pluginCode = await window.electronAPI.getPlugins();
-                    if (pluginCode && pluginCode.trim().length > 0) {
+                    const plugincode = await window.electronAPI.getPlugins();
+                    if (plugincode && plugincode.trim().length > 0) {
                         try {
-                            await webview.executeJavaScript(pluginCode);
+                            await webview.executeJavaScript(plugincode);
                         } catch (err) {
                         }
                     }
@@ -47,10 +46,9 @@
             } catch (err) {
             }
         });
-
         webview.addEventListener('did-fail-load', (event) => {
-            if (event.isMainFrame && retryCount < 3) {
-                retryCount++;
+            if (event.isMainFrame && retrycount < 3) {
+                retrycount++;
                 setTimeout(() => {
                     webview.reload();
                 }, 2000);

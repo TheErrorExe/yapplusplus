@@ -1,9 +1,11 @@
 const { app, BrowserWindow, ipcMain, Menu, shell, desktopCapturer, session } = require('electron');
-const { shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const hotDir = process.env.YAPPLUS_HOT_DIR;
-const appDir = process.env.YAPPLUS_APP_DIR;
+const hotdir = process.env.YAPPLUS_HOT_DIR;
+const appdir = process.env.YAPPLUS_APP_DIR;
+const internalhosts = ['yapper.website', 'yapin.gg'];
+const externalprotocols = ['http:', 'https:', 'mailto:', 'tel:'];
+const passprotocols = ['blob:', 'about:', 'devtools:'];
 
 
 
@@ -11,52 +13,90 @@ const appDir = process.env.YAPPLUS_APP_DIR;
 
 
 
-
-function resolve(relPath) {
-    if (hotDir) {
-        const hotPath = path.join(hotDir, relPath);
-        if (fs.existsSync(hotPath)) return hotPath;
+function parseurl(url) {
+    try {
+        return new URL(url);
+    } catch (e) {
+        return null;
     }
-    return path.join(appDir, relPath);
 }
 
 
-mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-  if (url.startsWith('http:') || url.startsWith('https:')) {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  }
-  return { action: 'allow' };
+
+function isinternal(url) {
+    const parsed = parseurl(url);
+    if (!parsed) return false;
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false;
+    return internalhosts.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+}
+
+
+function openexternal(url) {
+    const parsed = parseurl(url);
+    if (!parsed || !externalprotocols.includes(parsed.protocol)) return false;
+    shell.openExternal(parsed.href).catch(() => {});
+    return true;
+}
+
+
+
+app.on('web-contents-created', (event, contents) => {
+    contents.setWindowOpenHandler(({ url }) => {
+        if (isinternal(url)) return { action: 'allow' };
+        openexternal(url);
+        return { action: 'deny' };
+    });
+    const guard = (navevent, legacyurl) => {
+        const target = navevent.url || legacyurl || '';
+        const parsed = parseurl(target);
+        if (parsed && passprotocols.includes(parsed.protocol)) return;
+        if (isinternal(target)) return;
+        if (parsed && parsed.protocol === 'file:' && contents.getType() !== 'webview') return;
+        navevent.preventDefault();
+        openexternal(target);
+    };
+    contents.on('will-navigate', guard);
+    contents.on('will-redirect', guard);
 });
 
-function getPluginCode() {
+
+
+function resolve(relpath) {
+    if (hotdir) {
+        const hotpath = path.join(hotdir, relpath);
+        if (fs.existsSync(hotpath)) return hotpath;
+    }
+    return path.join(appdir, relpath);
+}
+
+
+
+function getplugincode() {
     const dirs = [
-        hotDir ? path.join(hotDir, 'plugins') : null,
-        path.join(appDir, 'plugins')
+        hotdir ? path.join(hotdir, 'plugins') : null,
+        path.join(appdir, 'plugins')
     ].filter(Boolean);
     const seen = new Set();
-    let combinedCode = '';
+    let combinedcode = '';
     for (const dir of dirs) {
         if (!fs.existsSync(dir)) continue;
         fs.readdirSync(dir).forEach(file => {
             if (file.endsWith('.js') && !seen.has(file)) {
                 seen.add(file);
                 try {
-                    combinedCode += `\n// [Libyapcore] [P.L]> ${file} >.<\n`;
-                    combinedCode += fs.readFileSync(path.join(dir, file), 'utf-8') + '\n';
+                    combinedcode += `\n// [Libyapcore] [P.L]> ${file} >.<\n`;
+                    combinedcode += fs.readFileSync(path.join(dir, file), 'utf-8') + '\n';
                 } catch (e) {}
             }
         });
     }
-    return combinedCode;
+    return combinedcode;
 }
 
-
-
-function getThemeCode() {
+function getthemecode() {
     const dirs = [
-        hotDir ? path.join(hotDir, 'themes') : null,
-        path.join(appDir, 'themes')
+        hotdir ? path.join(hotdir, 'themes') : null,
+        path.join(appdir, 'themes')
     ].filter(Boolean);
     const themes = {};
     for (const dir of dirs) {
@@ -70,22 +110,19 @@ function getThemeCode() {
     return themes;
 }
 
-ipcMain.handle('get-plugins', () => getPluginCode());
-ipcMain.handle('get-themes', () => getThemeCode());
-ipcMain.handle('get-asset', (event, assetName) => {
-
-
-
+ipcMain.handle('get-plugins', () => getplugincode());
+ipcMain.handle('get-themes', () => getthemecode());
+ipcMain.handle('get-asset', (event, assetname) => {
     const candidates = [
-        hotDir ? path.join(hotDir, 'assets', assetName) : null,
-        path.join(appDir, 'assets', assetName)
+        hotdir ? path.join(hotdir, 'assets', assetname) : null,
+        path.join(appdir, 'assets', assetname)
     ].filter(Boolean);
-    for (const assetPath of candidates) {
-        if (fs.existsSync(assetPath)) {
+    for (const assetpath of candidates) {
+        if (fs.existsSync(assetpath)) {
             try {
-                const bitmap = fs.readFileSync(assetPath);
+                const bitmap = fs.readFileSync(assetpath);
                 const base64 = Buffer.from(bitmap).toString('base64');
-                const ext = path.extname(assetName).toLowerCase();
+                const ext = path.extname(assetname).toLowerCase();
                 let mime = 'image/png';
                 if (ext === '.jpg' || ext === '.jpeg') mime = 'image/jpeg';
                 if (ext === '.gif') mime = 'image/gif';
@@ -95,16 +132,14 @@ ipcMain.handle('get-asset', (event, assetName) => {
         }
     }
     return null;
-
-
 });
 
 ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
     try {
         if (!filename.endsWith('.js')) filename += '.js';
-        const pluginsHotDir = path.join(hotDir, 'plugins');
-        if (!fs.existsSync(pluginsHotDir)) fs.mkdirSync(pluginsHotDir, { recursive: true });
-        fs.writeFileSync(path.join(pluginsHotDir, filename), code, 'utf-8');
+        const pluginshotdir = path.join(hotdir, 'plugins');
+        if (!fs.existsSync(pluginshotdir)) fs.mkdirSync(pluginshotdir, { recursive: true });
+        fs.writeFileSync(path.join(pluginshotdir, filename), code, 'utf-8');
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
@@ -113,7 +148,7 @@ ipcMain.handle('save-custom-plugin', async (event, filename, code) => {
 
 ipcMain.handle('open-external', async (event, url) => {
     try {
-        await shell.openExternal(url);
+        if (!openexternal(String(url))) return { success: false, error: 'blocked protocol' };
         return { success: true };
     } catch (error) {
         return { success: false, error: error.message };
@@ -121,73 +156,65 @@ ipcMain.handle('open-external', async (event, url) => {
 });
 
 async function update() {
-    const repoOwner = 'salami-reborn';
-    const repoName = 'yapplusplus';
+    const repoowner = 'salami-reborn';
+    const reponame = 'yapplusplus';
     const branch = 'main';
-
     try {
-        const treeUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`;
-        const response = await fetch(treeUrl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
-        
+        const treeurl = `https://api.github.com/repos/${repoowner}/${reponame}/git/trees/${branch}?recursive=1`;
+        const response = await fetch(treeurl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
         if (!response.ok) {
             if (response.status === 403 || response.status === 404) {
                 throw new Error(`GitHub API returned ${response.status}. You may have hit the API rate limit (60 req/hr). Try again later.`);
             }
             throw new Error(`GitHub API returned ${response.status}`);
         }
-        
-        const treeData = await response.json();
-        let updatedCount = 0;
-        const validPaths = new Set();
-
-        const SAFE_PATHS = /^(app\.js|main\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/;
-
-        for (const file of treeData.tree || []) {
-            if (file.type !== 'blob' || !SAFE_PATHS.test(file.path)) continue;
-            
-            validPaths.add(file.path);
-            const localPath = path.join(hotDir, file.path);
-            const blobUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/git/blobs/${file.sha}`;
-            const blobRes = await fetch(blobUrl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
-            if (!blobRes.ok) continue;
-
-            const blobData = await blobRes.json();
-            if (blobData.encoding !== 'base64') continue;
-            const remoteBuffer = Buffer.from(blobData.content, 'base64');
-
-            let needsUpdate = false;
-            if (!fs.existsSync(localPath)) {
-                needsUpdate = true;
+        const treedata = await response.json();
+        let updatedcount = 0;
+        const validpaths = new Set();
+        const safepaths = /^(app\.js|main\.js|preload\.js|html\/client\.html|assets\/.*|plugins\/.*|themes\/.*)$/;
+        for (const file of treedata.tree || []) {
+            if (file.type !== 'blob' || !safepaths.test(file.path)) continue;
+            validpaths.add(file.path);
+            const localpath = path.join(hotdir, file.path);
+            const bloburl = `https://api.github.com/repos/${repoowner}/${reponame}/git/blobs/${file.sha}`;
+            const blobres = await fetch(bloburl, { headers: { 'User-Agent': 'YapPlusPlus-App' } });
+            if (!blobres.ok) continue;
+            const blobdata = await blobres.json();
+            if (blobdata.encoding !== 'base64') continue;
+            const remotebuffer = Buffer.from(blobdata.content, 'base64');
+            let needsupdate = false;
+            if (!fs.existsSync(localpath)) {
+                needsupdate = true;
             } else {
-                const localBuffer = fs.readFileSync(localPath);
-                if (!localBuffer.equals(remoteBuffer)) {
-                    needsUpdate = true;
+                const localbuffer = fs.readFileSync(localpath);
+                if (!localbuffer.equals(remotebuffer)) {
+                    needsupdate = true;
                 }
             }
 
-            if (needsUpdate) {
-                fs.mkdirSync(path.dirname(localPath), { recursive: true });
-                fs.writeFileSync(localPath, remoteBuffer);
-                updatedCount++;
+            if (needsupdate) {
+                fs.mkdirSync(path.dirname(localpath), { recursive: true });
+                fs.writeFileSync(localpath, remotebuffer);
+                updatedcount++;
             }
         }
 
-        function cleanDir(dir) {
+        function cleandir(dir) {
             if (!fs.existsSync(dir)) return;
             const files = fs.readdirSync(dir);
             for (const file of files) {
-                const fullPath = path.join(dir, file);
-                const relPath = path.relative(hotDir, fullPath).replace(/\\/g, '/');
-                if (fs.statSync(fullPath).isDirectory()) {
-                    cleanDir(fullPath);
-                } else if (!validPaths.has(relPath)) {
-                    fs.unlinkSync(fullPath);
+                const fullpath = path.join(dir, file);
+                const relpath = path.relative(hotdir, fullpath).replace(/\\/g, '/');
+                if (fs.statSync(fullpath).isDirectory()) {
+                    cleandir(fullpath);
+                } else if (!validpaths.has(relpath)) {
+                    fs.unlinkSync(fullpath);
                 }
             }
         }
-        cleanDir(hotDir);
+        cleandir(hotdir);
 
-        return { success: true, count: updatedCount };
+        return { success: true, count: updatedcount };
     } catch (error) {
         console.error('[Libyapcore] [E]> Update failed:', error);
         return { success: false, error: error.message };
@@ -203,12 +230,12 @@ ipcMain.handle('restart-app', () => {
 
 app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
-    
+
     session.defaultSession.setDisplayMediaRequestHandler(async (request, callback) => {
         try {
             const sources = await desktopCapturer.getSources({ types: ['screen', 'window'], thumbnailSize: { width: 320, height: 180 } });
-            
-            const pickerWindow = new BrowserWindow({
+
+            const pickerwindow = new BrowserWindow({
                 width: 800,
                 height: 600,
                 title: 'Select Screen to Share',
@@ -220,7 +247,9 @@ app.whenReady().then(() => {
                 }
             });
 
-            let sourcesData = sources.map(s => ({
+
+
+            let sourcesdata = sources.map(s => ({
                 id: s.id,
                 name: s.name,
                 thumbnail: s.thumbnail.toDataURL()
@@ -231,7 +260,7 @@ app.whenReady().then(() => {
                 <body style="background: #1e1f22; color: #dbdee1; font-family: sans-serif; padding: 20px;">
                     <h2 style="margin-top: 0;">Select a screen or window to share</h2>
                     <div style="display: flex; flex-wrap: wrap; gap: 15px;">
-                        ${sourcesData.map((s, i) => `
+                        ${sourcesdata.map((s, i) => `
                             <div onclick="pick(${i})" style="cursor: pointer; text-align: center; width: 220px; padding: 10px; border-radius: 8px; background: #2b2d31;">
                                 <img src="${s.thumbnail}" style="width: 100%; border-radius: 4px; border: 1px solid #111;" />
                                 <div style="margin-top: 8px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${s.name}</div>
@@ -241,28 +270,28 @@ app.whenReady().then(() => {
                     <script>
                         const { ipcRenderer } = require('electron');
                         window.pick = (i) => {
-                            ipcRenderer.send('picked-screen', ${JSON.stringify(sourcesData)}[i]);
+                            ipcRenderer.send('picked-screen', ${JSON.stringify(sourcesdata)}[i]);
                         };
                     </script>
                 </body>
                 </html>
             `;
-            pickerWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+            pickerwindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
             ipcMain.once('picked-screen', (event, picked) => {
-                pickerWindow.close();
+                pickerwindow.close();
                 if (!picked) {
                     callback({});
                     return;
                 }
-                
+
                 const streams = { video: picked };
                 if (request.audioRequested && process.platform === 'win32') {
                     streams.audio = 'loopback';
                 }
                 callback(streams);
             });
-        
-            pickerWindow.on('closed', () => {
+
+            pickerwindow.on('closed', () => {
                 callback({});
             });
 
@@ -271,60 +300,27 @@ app.whenReady().then(() => {
             callback({});
         }
     });
-    const preloadPath = resolve('preload.js').replace(/\\/g, '/');
-    const clientPath = resolve('html/client.html');
-
-    const mainWindow = new BrowserWindow({
+    const preloadpath = resolve('preload.js').replace(/\\/g, '/');
+    const clientpath = resolve('html/client.html');
+    const mainwindow = new BrowserWindow({
         width: 1200,
         height: 800,
         autoHideMenuBar: true,
-        icon: path.join(appDir, 'assets', 'Icon.ico'),
+        icon: path.join(appdir, 'assets', 'Icon.ico'),
         webPreferences: {
-            webviewTag: true, 
-            preload: preloadPath,
+            webviewTag: true,
+            preload: preloadpath,
             contextIsolation: true,
             nodeIntegration: false,
-            additionalArguments: [`--preload-path=${preloadPath}`]
+            additionalArguments: [`--preload-path=${preloadpath}`]
         }
     });
 
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.includes('yapper.website') || url.includes('yapin.gg')) {
-            return { action: 'allow' };
-        }
-        shell.openExternal(url);
-        return { action: 'deny' };
-    });
-
-    mainWindow.webContents.on('did-attach-webview', (event, wc) => {
-        wc.executeJavaScript(`
-            document.addEventListener('click', (e) => {
-                const a = e.target.closest ? e.target.closest('a') : null;
-                if (!a) return;
-                const href = a.getAttribute('href');
-                if (!href) return;
-                
-                if (href.startsWith('#') || href.startsWith('javascript:')) return;
-                if (href.includes('yapper.website') || href.includes('yapin.gg')) return;
-
-                if (href.startsWith('http://') || href.startsWith('https://')) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.electronAPI.openExternal(href);
-                }
-            }, true);
-        `);
-
-        wc.on('will-navigate', (event, url) => {
-            if (!url.includes('yapper.website') && !url.includes('yapin.gg')) {
-                event.preventDefault();
-                shell.openExternal(url);
-            }
-        });
-    });
-
-    mainWindow.loadFile(clientPath);
+    mainwindow.loadFile(clientpath);
 });
+
+
+
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
