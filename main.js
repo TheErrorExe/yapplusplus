@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, Menu, shell, desktopCapturer, session } = require('electron');
+const { shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const hotDir = process.env.YAPPLUS_HOT_DIR;
@@ -20,7 +21,13 @@ function resolve(relPath) {
 }
 
 
-
+mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  if (url.startsWith('http:') || url.startsWith('https:')) {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  }
+  return { action: 'allow' };
+});
 
 function getPluginCode() {
     const dirs = [
