@@ -415,7 +415,7 @@
     } catch (err) {
       const msg = document.createElement('div');
       msg.style.cssText = 'padding:28px 40px;color:#ff4b4b;';
-      msg.textContent = 'This panel failed to load. Check the console for details.';
+      msg.textContent = 'Well shit, error code 67 (Panel failed to load). post this in the bug repport channel please.'; // error code 67 hahah 676767676
       target.appendChild(msg);
     }
   }
